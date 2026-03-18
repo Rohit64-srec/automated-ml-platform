@@ -1,55 +1,78 @@
-# Automated Machine Learning Platform for Beginners 🤖📊
+# AutoML Database Package
 
-## 📌 Description
+Shared SQLAlchemy models for the AutoML Platform. Used by both the API and Workers.
 
-This project is an Automated Machine Learning (AutoML) platform designed for beginners. It simplifies the process of building machine learning models by automating data preprocessing, model selection, and evaluation.
+## Models
 
-## 🎯 Objective
+| Model | Description |
+|-------|-------------|
+| `User` | User accounts with soft-delete support |
+| `Dataset` | Uploaded datasets with metadata |
+| `Workflow` | Visual workflow definitions (mutable) |
+| `WorkflowSnapshot` | Immutable snapshots for job execution |
+| `Job` | Training job execution records |
+| `JobNode` | Individual node execution within jobs |
+| `Model` | Trained model artifacts |
+| `CreditTransaction` | Immutable credit ledger |
+| `CreditPackage` | Credit purchase packages |
+| `Experiment` | Experiment groups for model comparison |
+| `ExperimentRun` | Links jobs/models to experiments |
+| `Tutorial` | Interactive learning content |
+| `UserTutorialProgress` | User tutorial progress tracking |
 
-To help users with little or no ML knowledge build and evaluate machine learning models easily.
+## Enums
 
-## 🚀 Features
+- `UserTier` - free, pro, enterprise
+- `FileFormat` - csv, json, parquet, excel, unknown
+- `ProblemType` - classification, regression, clustering, other
+- `JobStatus` - pending, queued, running, failed, completed, cancelled
+- `NodeType` - dataset, preprocess, model, visualize, save
+- `NodeStatus` - pending, running, success, failed, skipped
+- `TransactionType` - purchase, consumption, refund, adjustment
+- `TutorialDifficulty` - beginner, intermediate, advanced
+- `CreditTierRestriction` - none, pro_only, enterprise_only
 
-* Upload dataset (CSV format)
-* Automatic data preprocessing
-* Model selection and training
-* Performance evaluation
-* Simple and user-friendly interface
+## Usage
 
-## 🛠️ Tech Stack
+### In API (apps/api)
 
-* Python
-* Pandas
-* Scikit-learn
-* (Add: Flask / Streamlit if used)
+```python
+from app.core.database import get_db, Base
+from database.models import User, Dataset, Job
 
-## 📂 Project Structure
+# In FastAPI endpoint
+@app.get("/users/{user_id}")
+def get_user(user_id: UUID, db: Session = Depends(get_db)):
+    return db.query(User).filter(User.id == user_id).first()
+```
 
-* data/ → datasets
-* models/ → trained models
-* app.py → main application file
+### In Workers (apps/workers)
 
+```python
+import sys
+from pathlib import Path
 
-## ▶️ How to Run
+# Add packages to path
+packages_path = Path(__file__).parent.parent.parent / "packages"
+sys.path.insert(0, str(packages_path))
 
-1. Clone the repository
-2. Install dependencies
+from database.session import get_db
+from database.models import Job, JobNode
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the application
+## Schema Notes
 
-   ```bash
-   python app.py
-   ```
+1. **Immutable Ledger**: `credit_transactions` table has triggers preventing UPDATE/DELETE
+2. **Soft Deletes**: Users have `is_deleted` flag, hard delete after 30 days
+3. **Counter Triggers**: `dataset_count`, `workflow_count`, `model_count` maintained by triggers
+4. **Storage Tracking**: `storage_used_bytes` updated by triggers on dataset changes
 
-## 💡 Future Improvements
+## Database Triggers
 
-* Add deep learning models
-* Improve UI
-* Deploy as web app
+The production PostgreSQL schema includes these triggers (applied via SQL, not Alembic):
 
-## 👨‍💻 Author
-
-Rohit
+- `credit_tx_before_insert` - Validates balance, updates user credits
+- `credit_tx_no_update_delete` - Prevents modifications to ledger
+- `users_inc/dec_*_count` - Maintains counter columns
+- `users_adjust_storage_*` - Tracks storage usage
+- `set_updated_at` - Auto-updates timestamps
