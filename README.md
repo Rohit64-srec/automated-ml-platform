@@ -27,6 +27,23 @@ This project was developed as a team effort along with my friends. I contributed
 2. Install dependencies
 3. Run the project
 
+## 📸 Screenshots
+
+### 🏠 Home Page
+![Home](Home.jpeg)
+
+### 📊 Dataset Upload
+![Dataset](Dataset.jpeg)
+
+### 🤖 Model Selection
+![Models](Models.jpeg)
+
+### 📈 Learning / Training
+![Learn](Learn.jpeg)
+
+### 🔄 Model Workflow
+![Workflow](model-workflow.jpeg) 
+
 ## 👨‍💻 Author
 
 Rohit
